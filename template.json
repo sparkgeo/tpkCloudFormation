@@ -1,0 +1,175 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "TPK Jobs POST and GET with authoriztion",
+  "Resources": {
+    "TpkJobsApi": {
+      "Properties": {
+        "DefinitionBody": {
+          "basePath": "/prod",
+          "definitions": {
+            "Empty": {
+              "title": "Empty Schema",
+              "type": "object"
+            }
+          },
+          "host": "9il4ry9lkf.execute-api.us-east-1.amazonaws.com",
+          "info": {
+            "title": "TpkJobsApi",
+            "version": "2017-10-27T22:41:43Z"
+          },
+          "paths": {
+            "/jobs": {
+              "options": {
+                "consumes": [
+                  "application/json"
+                ],
+                "produces": [
+                  "application/json"
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "headers": {
+                      "Access-Control-Allow-Headers": {
+                        "type": "string"
+                      },
+                      "Access-Control-Allow-Methods": {
+                        "type": "string"
+                      },
+                      "Access-Control-Allow-Origin": {
+                        "type": "string"
+                      }
+                    },
+                    "schema": {
+                      "$ref": "#/definitions/Empty"
+                    }
+                  }
+                },
+                "x-amazon-apigateway-integration": {
+                  "passthroughBehavior": "when_no_match",
+                  "requestTemplates": {
+                    "application/json": "{\"statusCode\": 200}"
+                  },
+                  "responses": {
+                    "default": {
+                      "responseParameters": {
+                        "method.response.header.Access-Control-Allow-Headers": "'Authorization'",
+                        "method.response.header.Access-Control-Allow-Methods": "'DELETE,GET,HEAD,OPTIONS,PATCH,POST,PUT'",
+                        "method.response.header.Access-Control-Allow-Origin": "'*'"
+                      },
+                      "statusCode": "200"
+                    }
+                  },
+                  "type": "mock"
+                }
+              },
+              "x-amazon-apigateway-any-method": {
+                "produces": [
+                  "application/json"
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "schema": {
+                      "$ref": "#/definitions/Empty"
+                    }
+                  }
+                },
+                "security": [
+                  {
+                    "tpk_cognito_authorizer": []
+                  }
+                ],
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "httpMethod": "POST",
+                  "passthroughBehavior": "when_no_match",
+                  "responses": {
+                    "default": {
+                      "statusCode": "200"
+                    }
+                  },
+                  "type": "aws_proxy",
+                  "uri": { "Fn::Sub":  "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${TpkJobsLambdaFunction.Arn}/invocations"  }
+                }
+              }
+            }
+          },
+          "schemes": [
+            "https"
+          ],
+          "securityDefinitions": {
+            "tpk_cognito_authorizer": {
+              "in": "header",
+              "name": "Authorization",
+              "type": "apiKey",
+              "x-amazon-apigateway-authorizer": {
+                "providerARNs": [
+                  "arn:aws:cognito-idp:us-east-1:006481900477:userpool/us-east-1_tI5bk7EWM"
+                ],
+                "type": "cognito_user_pools"
+              },
+              "x-amazon-apigateway-authtype": "cognito_user_pools"
+            }
+          },
+          "swagger": "2.0"
+        },
+        "StageName": "Prod",
+        "Variables": {
+        }
+      },
+      "Type": "AWS::Serverless::Api"
+    },
+    "TpkJobsLambdaFunction": {
+      "Properties": {
+        "CodeUri": "s3://tpk-cloudformation/tpkrequestslambda.zip",
+        "Description": "Handle tpk job POST and GET requests", 
+        "FunctionName": "TpkJobsLambda",
+        "Policies": [{
+          "Statement": [
+            {
+              "Sid": "AllowBatchJobCreationPolicy",
+              "Effect": "Allow",
+              "Action": [
+                "batch:*"
+              ],
+              "Resource": [
+                "*"
+              ]
+            }
+          ]
+        }],
+        "Environment": {
+          "Variables": {
+            "JOB_QUEUE": "tpk-builder-queue",
+            "JOB_DEFINITION": "arn:aws:batch:us-east-1:006481900477:job-definition/tpk-builder-definition:1",
+            "TABLE_NAME": { "Ref": "Table" }
+          }
+        },
+        "Events": {
+          "Requests": {
+            "Properties": {
+              "Method": "ANY",
+              "Path": "/jobs",
+              "RestApiId": { "Ref": "TpkJobsApi" }
+            },
+            "Type": "Api"
+          }
+        },
+        "Handler": "index.handler",
+        "Runtime": "nodejs6.10"
+      },
+      "Type": "AWS::Serverless::Function"
+    },
+    "Table": {
+      "Properties": {
+        "PrimaryKey": {
+          "Name": "id",
+          "Type": "String"
+        }
+      },
+      "Type": "AWS::Serverless::SimpleTable"
+    }
+  },
+  "Transform": "AWS::Serverless-2016-10-31"
+}
