@@ -123,22 +123,27 @@
     "TpkJobsLambdaFunction": {
       "Properties": {
         "CodeUri": "s3://tpk-cloudformation/tpkrequestslambda.zip",
-        "Description": "Handle tpk job POST and GET requests", 
+        "Description": "Handle tpk job POST and GET requests",
         "FunctionName": "TpkJobsLambda",
-        "Policies": [{
-          "Statement": [
-            {
-              "Sid": "AllowBatchJobCreationPolicy",
-              "Effect": "Allow",
-              "Action": [
-                "batch:*"
-              ],
-              "Resource": [
-                "*"
-              ]
-            }
-          ]
-        }],
+        "Policies": [
+          {
+            "Statement": [
+              {
+                "Sid": "AllowBatchJobCreationPolicy",
+                "Effect": "Allow",
+                "Action": [
+                  "batch:*"
+                ],
+                "Resource": [
+                  "*"
+                ]
+              }
+            ]
+          },
+          "DynamoDBCrudPolicy": {
+            "TableName": { "Ref": "Table" }
+          }
+        ],
         "Environment": {
           "Variables": {
             "JOB_QUEUE": "tpk-builder-queue",
@@ -169,7 +174,73 @@
         }
       },
       "Type": "AWS::Serverless::SimpleTable"
-    }
+    },
+    "Tpks3Bucket": {
+      "Type" : "AWS::S3::Bucket",
+      "Properties" : {
+        "BucketName" : "tpkbucket"
+      }
+    },
+    "Tpks3BucketPolicy": {
+      "Type" : "AWS::S3::BucketPolicy",
+      "Properties" : {
+        "Bucket" : { "Ref" : "Tpks3Bucket" },
+        "PolicyDocument": {
+          "Statement": [
+              {
+                "Sid": "AllowGetPolicy",
+                "Effect": "Allow",
+                "Principal": "*",
+                "Action": "s3:GetObject",
+                "Resource": { "Fn::Join" : ["", ["arn:aws:s3:::", { "Ref" : "Tpks3Bucket" } , "/*" ]]}
+              }
+          ]
+        }
+      }
+    },
+    "Tpks3LambdaFunction": {
+      "Properties": {
+        "CodeUri": "s3://tpk-cloudformation/tpks3lambda.zip",
+        "Description": "Handle s3 tpk uploaded event in DynamoDB and SES",
+        "FunctionName": "Tpks3Lambda",
+        "Policies": [
+          {
+            "Statement": [
+              {
+                "Sid": "AllowSendEmailPolicy",
+                "Effect": "Allow",
+                "Action": [
+                  "ses:SendEmail",
+                  "ses:SendRawEmail"
+                ],
+                "Resource": [ "*" ]
+              }
+            ]
+          },
+          "DynamoDBCrudPolicy": {
+            "TableName": { "Ref": "Table" }
+          }
+        ],
+        "Environment": {
+          "Variables": {
+            "SOURCE_EMAIL": "sharkinsgis@gmail.com",
+            "TABLE_NAME": { "Ref": "Table" }
+          }
+        },
+        "Events": {
+          "Upload": {
+            "Properties": {
+              "Bucket": { "Ref": "Tpks3Bucket" },
+              "Events": "s3:ObjectCreated:*"
+            },
+            "Type": "S3"
+          }
+        },
+        "Handler": "index.handler",
+        "Runtime": "nodejs6.10"
+      },
+      "Type": "AWS::Serverless::Function"
+    },
   },
   "Transform": "AWS::Serverless-2016-10-31"
 }
