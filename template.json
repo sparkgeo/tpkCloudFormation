@@ -241,6 +241,68 @@
       },
       "Type": "AWS::Serverless::Function"
     },
+    "VPC": {
+      "Type": "AWS::EC2::VPC",
+      "Properties": {
+        "CidrBlock": "172.31.0.0/16",
+        "EnableDnsSupport": "true",
+        "EnableDnsHostnames": "true"
+      }
+    },
+    "InternetGateway": {
+      "Type": "AWS::EC2::InternetGateway"
+    },
+    "VPCGatewayAttachment": {
+      "Type": "AWS::EC2::VPCGatewayAttachment",
+      "Properties": "VpcId": { "Ref": "VPC" },
+      "InternetGatewayId": { "Ref": "InternetGateway" }
+    },
+    "Subnet": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": { "Ref": "VPC" },
+        "CidrBlock": "172.31.0.0/16",
+        "MapPublicIpOnLaunch": "true"
+      }
+    },
+    "RouteTable": {
+      "Type": "AWS::EC2::RouteTable",
+      "Properties": {
+        "VpcId": { "Ref": "VPC" }
+      }
+    },
+    "InternetRoute": {
+      "Type": "AWS::EC2::Route",
+      "DependsOn": "InternetGateway",
+      "Properties": {
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "GatewayId": { "Ref": "InternetGateway" },
+        "RouteTableId": { "Ref": "RouteTable" }
+      }
+    },
+    "SubnetARouteTableAssociation": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "RouteTableId": { "Ref": "RouteTable" },
+        "SubnetId": { "Ref": "Subnet" }
+      }
+    },
+    "SecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupName": "Internet Group"
+        "GroupDescription": "All traffic in, all traffic out.",
+        "VpcId": { "Ref": "VPC" },
+        "SecurityGroupIngress": {
+          "IpProtocol": "-1",
+          "CidrIp": "0.0.0.0/0"
+        },
+        "SecurityGroupEgress": {
+          "IpProtocol": "-1",
+          "CidrIp": "0.0.0.0/0"
+        }
+      }
+    }
   },
   "Transform": "AWS::Serverless-2016-10-31"
 }
