@@ -1,6 +1,6 @@
 {
   "AWSTemplateFormatVersion": "2010-09-09",
-  "Description": "TPK Jobs POST and GET with authoriztion",
+  "Description": "TPK Jobs POST and GET with authorization",
   "Resources": {
     "TpkJobsApi": {
       "Properties": {
@@ -275,7 +275,7 @@
     },
     "InternetRoute": {
       "Type": "AWS::EC2::Route",
-      "DependsOn": "InternetGateway",
+      "DependsOn": "VPCGatewayAttachment",
       "Properties": {
         "DestinationCidrBlock": "0.0.0.0/0",
         "GatewayId": { "Ref": "InternetGateway" },
@@ -314,7 +314,23 @@
       "Properties": {
         "ManagedPolicyArns": ["arn:aws:iam::aws:policy/service-role/AWSBatchServiceRole"],
         "Path": "/",
-        "RoleName": "TpkBuilderBatchServiceRole"
+        "RoleName": "TpkBuilderBatchServiceRole",
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": [
+                  "ec2.amazonaws.com"
+                ]
+              },
+              "Action": [
+                "sts:AssumeRole"
+              ]
+            }
+          ]
+        },
       }
     },
     "TpkBuilderEcsInstanceRole": {
@@ -334,15 +350,31 @@
           }
         ],
         "Path": "/",
-        "RoleName": "TpkBuilderEcsInstanceRole"
+        "RoleName": "TpkBuilderEcsInstanceRole",
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": [
+                  "ec2.amazonaws.com"
+                ]
+              },
+              "Action": [
+                "sts:AssumeRole"
+              ]
+            }
+          ]
+        },
       }
     },
-    "TpkBuilderComputeEnviornment": {
+    "TpkBuilderComputeEnvironment": {
       "Type" : "AWS::Batch::ComputeEnvironment",
       "Properties" : {
         "Type" : "Managed",
         "ServiceRole" : { "Ref": "TpkBuilderBatchServiceRole" },
-        "ComputeEnvironmentName": "TpkBuilderComputeEnviornment",
+        "ComputeEnvironmentName": "TpkBuilderComputeEnvironment",
         "ComputeResources" : {
           "SecurityGroupIds": [ { "Ref": "SecurityGroup" }],
           "Subnets": [ { "Ref": "Subnet" } ],
@@ -359,7 +391,7 @@
       "Properties": {
         "ComputeEnvironmentOrder": [ {
           "Order": 1,
-          "ComputeEnvironment": "TpkBuilderComputeEnviornment"
+          "ComputeEnvironment": { "Ref": "TpkBuilderComputeEnvironment" }
         } ],
         "State": "ENABLED",
         "Priority": 1,
@@ -368,61 +400,63 @@
     },
     "TpkBuilderJobDefinition": {
       "Type": "AWS::Batch::JobDefinition",
-      "JobDefinitionName": "TpkBuilderJobDefinition",
-      "RetryStrategy": {
-        "Attempts": 1
-      },
-      "Status": "ACTIVE",
-      "Type": "container",
-      "ContainerProperties": {
-        "Image": "006481900477.dkr.ecr.us-east-1.amazonaws.com/tpk-builder-image",
-        "Vcpus": 2,
-        "Memory": 2000,
-        "Command": [
-            "node",
-            "index.js",
-            "--id",
-            "Ref::id",
-            "--west",
-            "Ref::west",
-            "--south",
-            "Ref::south",
-            "--east",
-            "Ref::east",
-            "--north",
-            "Ref::north",
-            "--sod",
-            "Ref::sod",
-            "--service",
-            "Ref::service",
-            "--token",
-            "Ref::token",
-            "--minzoom",
-            "Ref::minzoom",
-            "--maxzoom",
-            "Ref::maxzoom"
-        ],
-        "Volumes": [],
-        "Environment": [
-            {
-                "name": "AWS_S3_REGION",
-                "value": { "Fn::Sub": "${AWS.Region}" }
-            },
-            {
-                "name": "AWS_S3_BUCKET",
-                "value": { "Ref": "Tpks3Bucket" }
-            },
-            {
-                "name": "MAPBOXURL",
-                "value": "http://api.tiles.mapbox.com/v4"
-            },
-            {
-                "name": "SODURL",
-                "value": "https://gisservices.datadoors.net/i3_ArcGIS/tile"
-            }
-        ],
-        "MountPoints": [],
-        "Ulimits": []
+      "Properties": {
+        "JobDefinitionName": "TpkBuilderJobDefinition",
+        "RetryStrategy": {
+          "Attempts": 1
+        },
+        "Parameters": {},
+        "Type": "container",
+        "ContainerProperties": {
+          "Image": "006481900477.dkr.ecr.us-east-1.amazonaws.com/tpk-builder-image",
+          "Vcpus": 2,
+          "Memory": 2000,
+          "Command": [
+              "node",
+              "index.js",
+              "--id",
+              "Ref::id",
+              "--west",
+              "Ref::west",
+              "--south",
+              "Ref::south",
+              "--east",
+              "Ref::east",
+              "--north",
+              "Ref::north",
+              "--sod",
+              "Ref::sod",
+              "--service",
+              "Ref::service",
+              "--token",
+              "Ref::token",
+              "--minzoom",
+              "Ref::minzoom",
+              "--maxzoom",
+              "Ref::maxzoom"
+          ],
+          "Volumes": [],
+          "Environment": [
+              {
+                  "Name": "AWS_S3_REGION",
+                  "Value": { "Fn::Sub": "${AWS::Region}" }
+              },
+              {
+                  "Name": "AWS_S3_BUCKET",
+                  "Value": { "Ref": "Tpks3Bucket" }
+              },
+              {
+                  "Name": "MAPBOXURL",
+                  "Value": "http://api.tiles.mapbox.com/v4"
+              },
+              {
+                  "Name": "SODURL",
+                  "Value": "https://gisservices.datadoors.net/i3_ArcGIS/tile"
+              }
+          ],
+          "MountPoints": [],
+          "Ulimits": []
+        }
       }
     }
   },
