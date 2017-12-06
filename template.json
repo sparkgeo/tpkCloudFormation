@@ -146,8 +146,8 @@
         ],
         "Environment": {
           "Variables": {
-            "JOB_QUEUE": "tpk-builder-queue",
-            "JOB_DEFINITION": "arn:aws:batch:us-east-1:006481900477:job-definition/tpk-builder-definition:1",
+            "JOB_QUEUE": { "Ref": "TpkBuilderJobQueue" },
+            "JOB_DEFINITION": { "Ref": "TpkBuilderJobDefinition" },
             "TABLE_NAME": { "Ref": "Table" }
           }
         },
@@ -254,8 +254,10 @@
     },
     "VPCGatewayAttachment": {
       "Type": "AWS::EC2::VPCGatewayAttachment",
-      "Properties": "VpcId": { "Ref": "VPC" },
-      "InternetGatewayId": { "Ref": "InternetGateway" }
+      "Properties": {
+        "VpcId": { "Ref": "VPC" },
+        "InternetGatewayId": { "Ref": "InternetGateway" }
+      }
     },
     "Subnet": {
       "Type": "AWS::EC2::Subnet",
@@ -290,17 +292,137 @@
     "SecurityGroup": {
       "Type": "AWS::EC2::SecurityGroup",
       "Properties": {
-        "GroupName": "Internet Group"
+        "GroupName": "Internet Group",
         "GroupDescription": "All traffic in, all traffic out.",
         "VpcId": { "Ref": "VPC" },
-        "SecurityGroupIngress": {
-          "IpProtocol": "-1",
-          "CidrIp": "0.0.0.0/0"
+        "SecurityGroupIngress": [
+          {
+            "IpProtocol": "-1",
+            "CidrIp": "0.0.0.0/0"
+          }
+        ],
+        "SecurityGroupEgress": [
+          {
+            "IpProtocol": "-1",
+            "CidrIp": "0.0.0.0/0"
+          }
+        ]
+      }
+    },
+    "TpkBuilderBatchServiceRole":{
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "ManagedPolicyArns": ["arn:aws:iam::aws:policy/service-role/AWSBatchServiceRole"],
+        "Path": "/",
+        "RoleName": "TpkBuilderBatchServiceRole"
+      }
+    },
+    "TpkBuilderEcsInstanceRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "ManagedPolicyArns": ["arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role"],
+        "Policies": [
+          {
+            "PolicyName": "s3PutObject",
+            "PolicyDocument": {
+              "Statement": [{
+                     "Effect": "Allow",
+                     "Action": "s3:PutObject*",
+                     "Resource": { "Fn::Sub": "arn:aws:s3:::${Tpks3Bucket}*" }
+              }]
+            }
+          }
+        ],
+        "Path": "/",
+        "RoleName": "TpkBuilderEcsInstanceRole"
+      }
+    },
+    "TpkBuilderComputeEnviornment": {
+      "Type" : "AWS::Batch::ComputeEnvironment",
+      "Properties" : {
+        "Type" : "Managed",
+        "ServiceRole" : { "Ref": "TpkBuilderBatchServiceRole" },
+        "ComputeEnvironmentName": "TpkBuilderComputeEnviornment",
+        "ComputeResources" : {
+          "SecurityGroupIds": [ { "Ref": "SecurityGroup" }],
+          "Subnets": [ { "Ref": "Subnet" } ],
+          "Type": "EC2",
+          "MinvCpus": 0,
+          "InstanceRole": { "Ref": "TpkBuilderEcsInstanceRole" },
+          "InstanceTypes": [ "m3.medium" ]
         },
-        "SecurityGroupEgress": {
-          "IpProtocol": "-1",
-          "CidrIp": "0.0.0.0/0"
-        }
+        "State" : "ENABLED"
+      }
+    },
+    "TpkBuilderJobQueue": {
+      "Type" : "AWS::Batch::JobQueue",
+      "Properties": {
+        "ComputeEnvironmentOrder": [ {
+          "Order": 1,
+          "ComputeEnvironment": "TpkBuilderComputeEnviornment"
+        } ],
+        "State": "ENABLED",
+        "Priority": 1,
+        "JobQueueName": "TpkBuilderJobQueue"
+      }
+    },
+    "TpkBuilderJobDefinition": {
+      "Type": "AWS::Batch::JobDefinition",
+      "JobDefinitionName": "TpkBuilderJobDefinition",
+      "RetryStrategy": {
+        "Attempts": 1
+      },
+      "Status": "ACTIVE",
+      "Type": "container",
+      "ContainerProperties": {
+        "Image": "006481900477.dkr.ecr.us-east-1.amazonaws.com/tpk-builder-image",
+        "Vcpus": 2,
+        "Memory": 2000,
+        "Command": [
+            "node",
+            "index.js",
+            "--id",
+            "Ref::id",
+            "--west",
+            "Ref::west",
+            "--south",
+            "Ref::south",
+            "--east",
+            "Ref::east",
+            "--north",
+            "Ref::north",
+            "--sod",
+            "Ref::sod",
+            "--service",
+            "Ref::service",
+            "--token",
+            "Ref::token",
+            "--minzoom",
+            "Ref::minzoom",
+            "--maxzoom",
+            "Ref::maxzoom"
+        ],
+        "Volumes": [],
+        "Environment": [
+            {
+                "name": "AWS_S3_REGION",
+                "value": { "Fn::Sub": "${AWS.Region}" }
+            },
+            {
+                "name": "AWS_S3_BUCKET",
+                "value": { "Ref": "Tpks3Bucket" }
+            },
+            {
+                "name": "MAPBOXURL",
+                "value": "http://api.tiles.mapbox.com/v4"
+            },
+            {
+                "name": "SODURL",
+                "value": "https://gisservices.datadoors.net/i3_ArcGIS/tile"
+            }
+        ],
+        "MountPoints": [],
+        "Ulimits": []
       }
     }
   },
