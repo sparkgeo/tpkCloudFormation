@@ -369,6 +369,13 @@
         },
       }
     },
+    "TpkBuilderEcsInstanceProfile": {
+      "Type": "AWS::IAM::InstanceProfile",
+      "Properties": {
+        "Path": "/",
+        "Roles": [ { "Ref": "TpkBuilderEcsInstanceRole" } ]
+      }
+    },
     "TpkBuilderComputeEnvironment": {
       "Type" : "AWS::Batch::ComputeEnvironment",
       "DependsOn": [ "TpkBuilderBatchServiceRole", "TpkBuilderEcsInstanceRole" ],
@@ -382,8 +389,8 @@
           "Type": "EC2",
           "MaxvCpus": 2,
           "MinvCpus": 0,
-          "InstanceRole": { "Fn::GetAtt": ["TpkBuilderEcsInstanceRole",  "Arn" ] },
-          "InstanceTypes": [ "m3.medium" ]
+          "InstanceRole": { "Fn::GetAtt": ["TpkBuilderEcsInstanceProfile",  "Arn" ] },
+          "InstanceTypes": [ "optimal" ]
         },
         "State" : "ENABLED"
       }
