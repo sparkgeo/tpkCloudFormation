@@ -1,7 +1,80 @@
 {
   "AWSTemplateFormatVersion": "2010-09-09",
-  "Description": "TPK Jobs POST and GET with authorization",
+  "Description": "Tpk Jobs Stack",
   "Resources": {
+    "TpkCognitoUserPool": {
+      "Type" : "AWS::Cognito::UserPool",
+      "AdminCreateUserConfig": {
+        "AllowAdminCreateUserOnly": true,
+        "InviteMessageTemplate": {
+          "EmailMessage": "Your username is {username} and temporary password is {####}. Please go to http://tpkdashboard.s3-website-us-east-1.amazonaws.com/updateUser to login and update your user information.",
+          "EmailSubject": "Your Digital Globe Offline account"
+        },
+        "UnusedAccountValidityDays": 100,
+      },
+      "AliasAttributes": [ "email" ],
+      "AutoVerifiedAttributes": [ "email" ],
+      "MfaConfiguration": "OFF",
+      "Schema": [
+        {
+          "Name": "email",
+          "AttributeDataType": "String",
+          "Mutable": false,
+          "Required": true
+        },
+        {
+          "Name": "custom:dgtoken",
+          "AttributeDataType": "String",
+          "Mutable": true
+        },
+        {
+          "Name": "custom:organization",
+          "AttributeDataType": "String",
+          "Mutable": true
+        }
+      ],
+      "Policies": [
+        {
+          "PasswordPolicy": {
+            "MinimumLength": 8,
+            "RequireLowercase": false,
+            "RequireNumbers": false,
+            "RequireSymbols": false,
+            "RequireUppercase": false
+          }
+        }
+      ],
+      "UserPoolName": "TpkCognitoUserPool"
+    },
+    "TpkCognitoAdminGroup": {
+      "Type" : "AWS::Cognito::UserPoolGroup",
+      "Properties" : {
+        "Description" : "User group for client organization administrators",
+        "GroupName" : "admin",
+        "Precedence" : 1,
+        "UserPoolId" : { "Ref": "TpkCognitoUserPool" }
+      }
+    },
+    "TpkCognitoDGAdminGroup": {
+      "Type" : "AWS::Cognito::UserPoolGroup",
+      "Properties" : {
+        "Description" : "User group for DG administrators",
+        "GroupName" : "dgadmin",
+        "Precedence" : 0,
+        "UserPoolId" : { "Ref": "TpkCognitoUserPool" }
+      }
+    },
+    "TpkCognitoUserPoolClient": {
+      "Type" : "AWS::Cognito::UserPoolClient",
+      "Properties" : {
+        "ClientName" : "tpkapplicationclients",
+        "ExplicitAuthFlows" : [ "ADMIN_NO_SRP_AUTH" ],
+        "GenerateSecret" : false,
+        "ReadAttributes" : [ "email", "custom:dgtoken", "custom:organization" ],
+        "RefreshTokenValidity" : 30,
+        "UserPoolId" : { "Ref": "TpkCognitoUserPool" }
+      }
+    },
     "TpkJobsApi": {
       "Properties": {
         "DefinitionBody": {
@@ -182,18 +255,46 @@
       }
     },
     "Tpks3BucketPolicy": {
-      "Type" : "AWS::S3::BucketPolicy",
-      "Properties" : {
-        "Bucket" : { "Ref" : "Tpks3Bucket" },
+      "Type": "AWS::S3::BucketPolicy",
+      "Properties": {
+        "Bucket": {
+          "Ref": "Tpks3Bucket"
+        },
         "PolicyDocument": {
           "Statement": [
-              {
-                "Sid": "AllowGetPolicy",
-                "Effect": "Allow",
-                "Principal": "*",
-                "Action": "s3:GetObject",
-                "Resource": { "Fn::Join" : ["", ["arn:aws:s3:::", { "Ref" : "Tpks3Bucket" } , "/*" ]]}
-              }
+            {
+              "Action": [
+                "s3:List*",
+                "s3:Get*"
+              ],
+              "Effect": "Allow",
+              "Principal": "*",
+              "Resource": [
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:aws:s3:::",
+                      {
+                        "Ref": "Tpks3Bucket"
+                      },
+                      "/*"
+                    ]
+                  ]
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:aws:s3:::",
+                      {
+                        "Ref": "Tpks3Bucket"
+                      }
+                    ]
+                  ]
+                }
+              ]
+            }
           ]
         }
       }
@@ -467,7 +568,83 @@
           "Ulimits": []
         }
       }
-    }
+    },
+    "TpkAdministratorsSNS": {
+      "Type": "AWS::SNS::Topic",
+      "Properties": {
+        "TopicName": "TpkAdministratorsSNS",
+        "Subscription": [{
+          "Endpoint": "sharkinsgis@gmail.com",
+          "Protocol": "email"
+        }]
+      }
+    },
+    "TpkBuilderJobFailedEventRule": {
+      "Type": "AWS::Events::Rule",
+      "Properties": {
+        "Description": "Rule to invoke Lambda when Tpk Builder Job fails",
+        "Name": "TpkBuilderJobFailedEventRule",
+        "EventPattern": {
+          "detail-type": [
+            "Batch Job State Change"
+          ],
+          "source": [ "aws.batch" ],
+          "detail": {
+            "status": [ "FAILED" ]
+          }
+        },
+        "Targets": [{
+          "Arn": { "Ref": "TpkAdministratorsSNS" },
+          "Id": "TpkAdministratorsSNSTarget"
+        }]
+      }
+    },
+    "TpkJobFailedLambdaFunction": {
+      "Properties": {
+        "CodeUri": "s3://tpk-cloudformation/tpkfailedLambda.zip",
+        "Description": "Send email to user when a tpk job fails in Batch",
+        "FunctionName": "TpkJobFailedLambda",
+        "Policies": [
+          {
+            "Statement": [
+              {
+                "Sid": "AllowSendEmailPolicy",
+                "Effect": "Allow",
+                "Action": [
+                  "ses:SendEmail",
+                  "ses:SendRawEmail"
+                ],
+                "Resource": [ "*" ]
+              }
+            ]
+          }
+        ],
+        "Environment": {
+          "Variables": {
+            "SOURCE_EMAIL": "sharkinsgis@gmail.com"
+          }
+        },
+        "Events": {
+          "BatchErrorEvent": {
+            "Properties": {
+              "Pattern": {
+                "detail-type": [
+                  "Batch Job State Change"
+                ],
+                "source": [ "aws.batch" ],
+                "detail": {
+                  "status": [ "FAILED" ]
+                }
+              }
+            },
+            "Type": "CloudWatchEvent"
+          }
+        },
+        "Handler": "index.handler",
+        "Runtime": "nodejs6.10"
+      },
+      "Type": "AWS::Serverless::Function"
+    },
   },
   "Transform": "AWS::Serverless-2016-10-31"
 }
