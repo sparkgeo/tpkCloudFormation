@@ -4,47 +4,47 @@
   "Resources": {
     "TpkCognitoUserPool": {
       "Type" : "AWS::Cognito::UserPool",
-      "AdminCreateUserConfig": {
-        "AllowAdminCreateUserOnly": true,
-        "InviteMessageTemplate": {
-          "EmailMessage": "Your username is {username} and temporary password is {####}. Please go to http://tpkdashboard.s3-website-us-east-1.amazonaws.com/updateUser to login and update your user information.",
-          "EmailSubject": "Your Digital Globe Offline account"
+      "Properties": {
+        "AdminCreateUserConfig": {
+          "AllowAdminCreateUserOnly": true,
+          "InviteMessageTemplate": {
+            "EmailMessage": "Your username is {username} and temporary password is {####} Please go to http://tpkdashboard.s3-website-us-east-1.amazonaws.com/updateUser to login and update your user information.",
+            "EmailSubject": "Your Digital Globe Offline account"
+          },
+          "UnusedAccountValidityDays": 100,
         },
-        "UnusedAccountValidityDays": 100,
-      },
-      "AliasAttributes": [ "email" ],
-      "AutoVerifiedAttributes": [ "email" ],
-      "MfaConfiguration": "OFF",
-      "Schema": [
-        {
-          "Name": "email",
-          "AttributeDataType": "String",
-          "Mutable": false,
-          "Required": true
-        },
-        {
-          "Name": "custom:dgtoken",
-          "AttributeDataType": "String",
-          "Mutable": true
-        },
-        {
-          "Name": "custom:organization",
-          "AttributeDataType": "String",
-          "Mutable": true
-        }
-      ],
-      "Policies": [
-        {
-          "PasswordPolicy": {
-            "MinimumLength": 8,
-            "RequireLowercase": false,
-            "RequireNumbers": false,
-            "RequireSymbols": false,
-            "RequireUppercase": false
+        "AliasAttributes": [ "email" ],
+        "AutoVerifiedAttributes": [ "email" ],
+        "MfaConfiguration": "OFF",
+        "Schema": [
+          {
+            "Name": "email",
+            "AttributeDataType": "String",
+            "Mutable": false,
+            "Required": true
+          },
+          {
+            "Name": "dgtoken",
+            "AttributeDataType": "String",
+            "Mutable": true
+          },
+          {
+            "Name": "organization",
+            "AttributeDataType": "String",
+            "Mutable": true
           }
-        }
-      ],
-      "UserPoolName": "TpkCognitoUserPool"
+        ],
+        "Policies": {
+            "PasswordPolicy": {
+              "MinimumLength": 8,
+              "RequireLowercase": false,
+              "RequireNumbers": false,
+              "RequireSymbols": false,
+              "RequireUppercase": false
+            }
+        },
+        "UserPoolName": "TpkCognitoUserPool"
+      }
     },
     "TpkCognitoAdminGroup": {
       "Type" : "AWS::Cognito::UserPoolGroup",
@@ -70,7 +70,6 @@
         "ClientName" : "tpkapplicationclients",
         "ExplicitAuthFlows" : [ "ADMIN_NO_SRP_AUTH" ],
         "GenerateSecret" : false,
-        "ReadAttributes" : [ "email", "custom:dgtoken", "custom:organization" ],
         "RefreshTokenValidity" : 30,
         "UserPoolId" : { "Ref": "TpkCognitoUserPool" }
       }
@@ -177,9 +176,7 @@
               "name": "Authorization",
               "type": "apiKey",
               "x-amazon-apigateway-authorizer": {
-                "providerARNs": [
-                  "arn:aws:cognito-idp:us-east-1:006481900477:userpool/us-east-1_tI5bk7EWM"
-                ],
+                "providerARNs": [ { "Fn::GetAtt": ["TpkCognitoUserPool", "Arn" ] } ],
                 "type": "cognito_user_pools"
               },
               "x-amazon-apigateway-authtype": "cognito_user_pools"
