@@ -65,12 +65,14 @@
       }
     },
     "TpkCognitoUserPoolClient": {
+      "DependsOn": "TpkCognitoUserPool",
       "Type" : "AWS::Cognito::UserPoolClient",
       "Properties" : {
         "ClientName" : "tpkapplicationclients",
         "ExplicitAuthFlows" : [ "ADMIN_NO_SRP_AUTH" ],
         "GenerateSecret" : false,
         "RefreshTokenValidity" : 30,
+        "ReadAttributes": [ "email", "custom:dgtoken", "custom:organization" ],
         "UserPoolId" : { "Ref": "TpkCognitoUserPool" }
       }
     },
@@ -642,6 +644,20 @@
       },
       "Type": "AWS::Serverless::Function"
     },
+  },
+  "Outputs": {
+    "UserPoolId": {
+      "Value": { "Ref" : "TpkCognitoUserPool" },
+      "Export": { "Name": {"Fn::Sub": "${AWS::StackName}-UserPoolId" }}
+    },
+    "AppClientId": {
+      "Value": { "Ref": "TpkCognitoUserPoolClient" },
+      "Export": { "Name": {"Fn::Sub": "${AWS::StackName}-AppClientId" }}
+    },
+    "ApiUrl": {
+      "Value": { "Fn::Sub": "https://${TpkJobsApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/jobs" },
+      "Export": { "Name": {"Fn::Sub": "${AWS::StackName}-ApiUrl" }}
+    }
   },
   "Transform": "AWS::Serverless-2016-10-31"
 }
