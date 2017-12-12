@@ -28,20 +28,62 @@
   },
   "Mappings": {
     "S3WebsiteMap": {
-      "us-east-1": {"endpoint": "s3-website-us-east-1.amazonaws.com"},
-      "us-east-2": {"endpoint": "s3-website.us-east-2.amazonaws.com"},
-      "us-west-1": {"endpoint": "s3-website-us-west-1.amazonaws.com"},
-      "us-west-2": {"endpoint": "s3-website-us-west-2.amazonaws.com"},
-      "ca-central-1": {"endpoint": "s3-website.ca-central-1.amazonaws.com"},
-      "ap-south-1": {"endpoint": "s3-website.ap-south-1.amazonaws.com"},
-      "ap-northeast-2": {"endpoint": "s3-website.ap-northeast-2.amazonaws.com"},
-      "ap-southeast-1": {"endpoint": "s3-website-ap-southeast-1.amazonaws.com"},
-      "ap-southeast-2": {"endpoint": "s3-website-ap-southeast-2.amazonaws.com"},
-      "ap-northeast-1": {"endpoint": "s3-website-ap-northeast-1.amazonaws.com"},
-      "eu-central-1": {"endpoint": "s3-website.eu-central-1.amazonaws.com"},
-      "eu-west-1": {"endpoint": "s3-website-eu-west-1.amazonaws.com"},
-      "eu-west-2": {"endpoint": "s3-website.eu-west-2.amazonaws.com"},
-      "sa-east-1": {"endpoint": "s3-website-sa-east-1.amazonaws.com"}
+      "us-east-1": {
+        "endpoint": "s3-website-us-east-1.amazonaws.com",
+        "hostedZone": "Z3AQBSTGFYJSTF"
+      },
+      "us-east-2": {
+        "endpoint": "s3-website.us-east-2.amazonaws.com",
+        "hostedZone": "Z2O1EMRO9K5GLX"
+      },
+      "us-west-1": {
+        "endpoint": "s3-website-us-west-1.amazonaws.com",
+        "hostedZone": "Z2F56UZL2M1ACD" 
+      },
+      "us-west-2": {
+        "endpoint": "s3-website-us-west-2.amazonaws.com",
+        "hostedZone": "Z3BJ6K6RIION7M" 
+      },
+      "ca-central-1": {
+        "endpoint": "s3-website.ca-central-1.amazonaws.com",
+        "hostedZone": "Z1QDHH18159H29"
+      },
+      "ap-south-1": {
+        "endpoint": "s3-website.ap-south-1.amazonaws.com",
+        "hostedZone": "Z11RGJOFQNVJUP"
+      },
+      "ap-northeast-1": {
+        "endpoint": "s3-website-ap-northeast-1.amazonaws.com",
+        "hostedZone": "Z2M4EHUR26P7ZW"
+      },
+      "ap-northeast-2": {
+        "endpoint": "s3-website.ap-northeast-2.amazonaws.com",
+        "hostedZone": "Z3W03O7B5YMIYP"
+      },
+      "ap-southeast-1": {
+        "endpoint": "s3-website-ap-southeast-1.amazonaws.com",
+        "hostedZone": "Z3O0J2DXBE1FTB" 
+      },
+      "ap-southeast-2": {
+        "endpoint": "s3-website-ap-southeast-2.amazonaws.com",
+        "hostedZone": "Z1WCIGYICN2BYD" 
+      },
+      "eu-central-1": {
+        "endpoint": "s3-website.eu-central-1.amazonaws.com",
+        "hostedZone": "Z21DNDUVLTQW6Q"
+      },
+      "eu-west-1": {
+        "endpoint": "s3-website-eu-west-1.amazonaws.com",
+        "hostedZone": "Z1BKCTXD74EZPE"
+      },
+      "eu-west-2": {
+        "endpoint": "s3-website.eu-west-2.amazonaws.com",
+        "hostedZone": "Z1BKCTXD74EZPE"
+      },
+      "sa-east-1": {
+        "endpoint": "s3-website-sa-east-1.amazonaws.com",
+        "hostedZone": "Z31GFT0UA1I2HV"
+      }
     }
   },
   "Resources": {
@@ -279,6 +321,18 @@
         }
       }
     },
+    "WebAddress": {
+      "Type": "AWS::Route53::RecordSet",
+      "Properties": {
+        "AliasTarget": {
+          "HostedZoneId": "Z2FDTNDATAQYW2",
+          "DNSName": {"Fn::Sub": "${DomainName}"}
+        },
+        "HostedZoneName": {"Fn::Sub": "${DomainName}."},
+        "Name": {"Fn::Sub": "${DomainName}."},
+        "Type": "A"
+      }
+    }
   },
   "Outputs": {
   }
