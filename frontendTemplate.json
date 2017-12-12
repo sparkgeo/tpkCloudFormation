@@ -2,6 +2,10 @@
   "AWSTemplateFormatVersion": "2010-09-09",
   "Description": "Tpk front end sites",
   "Parameters": {
+    "BackendStack": {
+      "Description": "Name of the backend tpk stack",
+      "Type": "String"
+    },
     "GitHubOAuthToken": {
       "Description": "OAuth or personal access token.",
       "Type": "String",
@@ -24,6 +28,10 @@
       "Description": "The branch that will trigger build/deploy.",
       "Type": "String",
       "Default": "master"
+    },
+    "WebsiteAddress": {
+      "Description": "Bucket domain name.  Cannot be an existing bucket name.",
+      "Type": "String"
     }
   },
   "Mappings": {
@@ -151,15 +159,15 @@
             },
             {
               "Name": "API_URL",
-              "Value": { "Fn::ImportValue" : "tpkStack-ApiUrl" }
+              "Value": { "Fn::ImportValue" : { "Fn::Sub":"${BackendStack}-ApiUrl" } }
             },
             {
               "Name": "USER_POOL_ID",
-              "Value": { "Fn::ImportValue" : "tpkStack-UserPoolId" }
+              "Value": { "Fn::ImportValue" : { "Fn::Sub":"${BackendStack}-UserPoolId" } }
             },
             {
               "Name": "APP_CLIENT_ID",
-              "Value": { "Fn::ImportValue" : "tpkStack-AppClientId" }
+              "Value": { "Fn::ImportValue" : { "Fn::Sub":"${BackendStack}-AppClientId" } }
             },
             {
               "Name": "MAPBOX_TOKEN",
@@ -314,6 +322,7 @@
       "Type": "AWS::S3::Bucket",
       "DeletionPolicy": "Retain",
       "Properties": {
+        "BucketName": { "Ref": "WebsiteAddress" },
         "AccessControl": "PublicRead",
         "WebsiteConfiguration": {
           "IndexDocument": "index.html",
@@ -322,15 +331,22 @@
       }
     },
     "WebAddress": {
+      "DependsOn": "StaticSiteBucket",
       "Type": "AWS::Route53::RecordSet",
       "Properties": {
-        "AliasTarget": {
-          "HostedZoneId": "Z2FDTNDATAQYW2",
-          "DNSName": {"Fn::Sub": "${DomainName}"}
+        "Type": "A",
+        "Name": { "Ref": "WebsiteAddress" },
+        "HostedZoneId":{
+            "Fn::FindInMap" : [ "S3WebsiteMap", { "Ref" : "AWS::Region" }, "hostedZone" ]
         },
-        "HostedZoneName": {"Fn::Sub": "${DomainName}."},
-        "Name": {"Fn::Sub": "${DomainName}."},
-        "Type": "A"
+        "AliasTarget": {
+          "HostedZoneId": {
+            "Fn::FindInMap" : [ "S3WebsiteMap", { "Ref" : "AWS::Region" }, "hostedZone" ]
+          },
+          "DNSName": {
+            "Fn::FindInMap" : [ "S3WebsiteMap", { "Ref" : "AWS::Region" }, "endpoint" ]
+          }
+        }
       }
     }
   },
