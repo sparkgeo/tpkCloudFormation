@@ -1,6 +1,18 @@
 {
   "AWSTemplateFormatVersion": "2010-09-09",
   "Description": "Tpk Jobs Stack",
+  "Parameters": {
+    "AdministratorEmail": {
+      "Description": "Email to receive initial alarm notifications.  More can be added",
+      "Type": "String",
+      "Default": "sharkinsgis@gmail.com"
+    },
+    "SourceEmail": {
+      "Description": "Email address used to send users notifications when tpks are ready",
+      "Type": "String",
+      "Default": "sharkinsgis@gmail.com"
+    }
+  },
   "Resources": {
     "TpkCognitoUserPool": {
       "Type" : "AWS::Cognito::UserPool",
@@ -8,10 +20,10 @@
         "AdminCreateUserConfig": {
           "AllowAdminCreateUserOnly": true,
           "InviteMessageTemplate": {
-            "EmailMessage": "Your username is {username} and temporary password is {####} Please go to http://tpkdashboard.s3-website-us-east-1.amazonaws.com/updateUser to login and update your user information.",
+            "EmailMessage": "Hi {username} your temporary password is {####} Please go to http://dgmapsapi.com/updateUser to login and update your user information.",
             "EmailSubject": "Your Digital Globe Offline account"
           },
-          "UnusedAccountValidityDays": 100,
+          "UnusedAccountValidityDays": 100
         },
         "AliasAttributes": [ "email" ],
         "AutoVerifiedAttributes": [ "email" ],
@@ -194,7 +206,7 @@
     },
     "TpkJobsLambdaFunction": {
       "Properties": {
-        "CodeUri": "s3://tpk-cloudformation/tpkrequestslambda.zip",
+        "CodeUri": "s3://tpk-cloudformation/tpkjobslambda.zip",
         "Description": "Handle tpk job POST and GET requests",
         "FunctionName": "TpkJobsLambda",
         "Policies": [
@@ -323,7 +335,7 @@
         ],
         "Environment": {
           "Variables": {
-            "SOURCE_EMAIL": "sharkinsgis@gmail.com",
+            "SOURCE_EMAIL": { "Ref": "SourceEmail" },
             "TABLE_NAME": { "Ref": "Table" }
           }
         },
@@ -517,7 +529,7 @@
         "Parameters": {},
         "Type": "container",
         "ContainerProperties": {
-          "Image": "006481900477.dkr.ecr.us-east-1.amazonaws.com/tpk-builder-image",
+          "Image": "sharkinsspatial/tpkbuilder:tpkbuilder",
           "Vcpus": 2,
           "Memory": 2000,
           "Command": [
@@ -573,7 +585,7 @@
       "Properties": {
         "TopicName": "TpkAdministratorsSNS",
         "Subscription": [{
-          "Endpoint": "sharkinsgis@gmail.com",
+          "Endpoint": { "Ref": "AdministratorEmail" },
           "Protocol": "email"
         }]
       }
@@ -600,7 +612,7 @@
     },
     "TpkJobFailedLambdaFunction": {
       "Properties": {
-        "CodeUri": "s3://tpk-cloudformation/tpkfailedLambda.zip",
+        "CodeUri": "s3://tpk-cloudformation/tpkfailedlambda.zip",
         "Description": "Send email to user when a tpk job fails in Batch",
         "FunctionName": "TpkJobFailedLambda",
         "Policies": [
