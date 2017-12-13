@@ -330,15 +330,18 @@
         }
       }
     },
+    "HostedZone": {
+      "Type": "AWS::Route53::HostedZone",
+      "Properties": {
+        "Name": { "Ref": "WebsiteAddress" }
+      }
+    },
     "WebAddress": {
-      "DependsOn": "StaticSiteBucket",
       "Type": "AWS::Route53::RecordSet",
       "Properties": {
         "Type": "A",
         "Name": { "Ref": "WebsiteAddress" },
-        "HostedZoneId":{
-            "Fn::FindInMap" : [ "S3WebsiteMap", { "Ref" : "AWS::Region" }, "hostedZone" ]
-        },
+        "HostedZoneId":{ "Ref": "HostedZone" },
         "AliasTarget": {
           "HostedZoneId": {
             "Fn::FindInMap" : [ "S3WebsiteMap", { "Ref" : "AWS::Region" }, "hostedZone" ]
