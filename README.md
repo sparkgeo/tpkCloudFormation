@@ -97,7 +97,32 @@ and click 'Manage your User Pools'.
 From 'Your User Pools' select 'TpkCognitoUserPool'.
 
 Under 'General Settings' on the left, select 'Users and groups'.
+
 ![Alt text](docs/Userspanel.png)
 
+Click 'Create User'.  And you are presented with the following dialog
 
+![Alt text](docs/Createuser.png)
 
+Ensure 'Send and invitation to this new user?' is checked. And that 'SMS' is
+unchecked and 'Email' is checked.  Ensure 'Mark email as verified?' is checked.
+The user will receive an email with a link to the application's updateUser page
+where they can use their temporary password to update their account information.
+
+All users have access to the create tile pacakges using the tpkrequest
+application.  Users can use the tpkdashboard app to view the history of tpk jobs 
+they have created.  By default, users may only view tpk jobs they have created
+themselves.
+
+There are two Cognito user groups which control administrative
+access to the tpkdashboard.  The admin group allows users to view all tpk jobs
+created by members of their organization.  The dgadmin group allows users to see
+all tpk jobs created in the system.
+
+After the user has been successfully added.  You are presented with the user
+page containing the following buttons at the top.
+
+![Alt text](docs/Addtogroup.png)
+
+If you wish to add the user to an adminstrative group click the 'Add to group'
+button and choose the appropriate group from the dropdown menu.
