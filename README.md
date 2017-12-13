@@ -37,13 +37,14 @@ needs to be [moved out](http://docs.aws.amazon.com/ses/latest/DeveloperGuide/req
 
 The `frontendTemplate.json` depends on cross stack [references](http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/walkthrough-crossstackref.html)
 to resources created in the backend stack so the backend stack must be created
-first.
+first.  `frontendTemplate.json` uses [CodePipeline](https://aws.amazon.com/codepipeline/)
+for tracking updates to the front end application repositories.  There can be a
+small delay after the stack is create before the CodePipeline places the built
+assets in the relevant S3 bucket.
 
 ### tpkrequest
 
 To deploy the [tpkrequest](https://github.com/sharkinsspatial/tpkrequest)
-application with [CodePipeline](https://aws.amazon.com/codepipeline/) tracking
-changes to the repo.
 
 ```bash
 aws cloudformation deploy --template-file frontendTemplate.json /
@@ -56,8 +57,6 @@ GitHubBranch=master WebsiteAddress=domainName
 ### tpkdashboard
 
 To deploy the [tpkdashboard](https://github.com/sharkinsspatial/tpkdashboard)
-application with [CodePipeline](https://aws.amazon.com/codepipeline/) tracking
-changes to the repo.
 
 ```bash
 aws cloudformation deploy --template-file frontendTemplate.json /
