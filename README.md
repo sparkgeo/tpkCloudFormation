@@ -121,8 +121,8 @@ they have created.  By default, users may only view tpk jobs they have created
 themselves.
 
 There are two Cognito user groups which control administrative
-access to the tpkdashboard.  The admin group allows users to view all tpk jobs
-created by members of their organization.  The dgadmin group allows users to see
+access to the tpkdashboard.  The `admin` group allows users to view all tpk jobs
+created by members of their organization.  The `dgadmin` group allows users to see
 all tpk jobs created in the system.
 
 After the user has been successfully added.  You are presented with the user
