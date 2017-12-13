@@ -98,7 +98,7 @@ From 'Your User Pools' select 'TpkCognitoUserPool'.
 
 Under 'General Settings' on the left, select 'Users and groups'.
 
-![alt text](docs/Userpanel.png)
+![Alt text](docs/Userpanel.png)
 
 
 
