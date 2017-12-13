@@ -104,8 +104,14 @@ Click 'Create User'.  And you are presented with the following dialog
 
 ![Alt text](docs/Createuser.png)
 
-Ensure 'Send and invitation to this new user?' is checked. And that 'SMS' is
-unchecked and 'Email' is checked.  Ensure 'Mark email as verified?' is checked.
+'Send and invitation to this new user?' is checked.
+
+'SMS' is unchecked.
+
+'Email' is checked.
+
+'Mark email as verified?' is checked.
+
 The user will receive an email with a link to the application's updateUser page
 where they can use their temporary password to update their account information.
 
