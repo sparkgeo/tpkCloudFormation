@@ -35,6 +35,10 @@ needs to be [moved out](http://docs.aws.amazon.com/ses/latest/DeveloperGuide/req
 
 ## Frontend stacks
 
+The `frontendTemplate.json` depends on cross stack [references](http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/walkthrough-crossstackref.html)
+to resources created in the backend stack so the backend stack must be created
+first.
+
 ### tpkrequest
 
 To deploy the [tpkrequest](https://github.com/sharkinsspatial/tpkrequest)
@@ -78,7 +82,23 @@ An S3 bucket will be created with the same address. This bucket must not already
 globally anywhere in S3. (This is a requirement/limitation of s3-website.)
 Do not prefix with http e.g. dgmapsapi.com.
 
+## DNS Configuration
 
+The `frontendTemplate.json` creates a Hosted Zone and Alias Records for the
+buckets in AWS Route 53.  To use a custom domain (as specified in the
+`WebsiteAddress` parameter) follow the instructions available from [Step 4](http://docs.aws.amazon.com/AmazonS3/latest/dev/website-hosting-custom-domain-walkthrough.html#root-domain-walkthrough-update-ns-record).
+
+
+## Adding users
+
+In the AWS console navigate to the Cognito [console](https://console.aws.amazon.com/cognito/home?region=us-east-1)
+and click 'Manage your User Pools'.
+
+From 'Your User Pools' select 'TpkCognitoUserPool'.
+
+Under 'General Settings' on the left, select 'Users and groups'.
+
+![alt text](docs/Userpanel.png)
 
 
 

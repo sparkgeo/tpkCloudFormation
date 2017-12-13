@@ -301,7 +301,13 @@
       "Type": "AWS::S3::Bucket",
       "DeletionPolicy": "Delete",
       "Properties": {
-        "AccessControl": "PublicRead"
+        "AccessControl": "PublicRead",
+        "BucketName": {"Fn::Sub": "www.${WebsiteAddress}"},
+        "WebsiteConfiguration": {
+          "RedirectAllRequestsTo": {
+            "HostName": {"Ref": "WebsiteAddress"}
+          }
+        }
       }
     },
     "StaticSiteBucketPolicy": {
