@@ -55,7 +55,6 @@
               "RequireUppercase": false
             }
         },
-        "UserPoolName": "TpkCognitoUserPool"
       }
     },
     "TpkCognitoAdminGroup": {
@@ -208,7 +207,6 @@
       "Properties": {
         "CodeUri": "s3://tpk-cloudformation/tpkjobslambda.zip",
         "Description": "Handle tpk job POST and GET requests",
-        "FunctionName": "TpkJobsLambda",
         "Policies": [
           {
             "Statement": [
@@ -260,10 +258,7 @@
       "Type": "AWS::Serverless::SimpleTable"
     },
     "Tpks3Bucket": {
-      "Type" : "AWS::S3::Bucket",
-      "Properties" : {
-        "BucketName" : "tpkbucket"
-      }
+      "Type" : "AWS::S3::Bucket"
     },
     "Tpks3BucketPolicy": {
       "Type": "AWS::S3::BucketPolicy",
@@ -314,7 +309,6 @@
       "Properties": {
         "CodeUri": "s3://tpk-cloudformation/tpks3lambda.zip",
         "Description": "Handle s3 tpk uploaded event in DynamoDB and SES",
-        "FunctionName": "Tpks3Lambda",
         "Policies": [
           {
             "Statement": [
@@ -426,7 +420,6 @@
       "Properties": {
         "ManagedPolicyArns": ["arn:aws:iam::aws:policy/service-role/AWSBatchServiceRole"],
         "Path": "/",
-        "RoleName": "TpkBuilderBatchServiceRole",
         "AssumeRolePolicyDocument": {
           "Version": "2012-10-17",
           "Statement": [
@@ -462,7 +455,6 @@
           }
         ],
         "Path": "/",
-        "RoleName": "TpkBuilderEcsInstanceRole",
         "AssumeRolePolicyDocument": {
           "Version": "2012-10-17",
           "Statement": [
@@ -494,7 +486,6 @@
       "Properties" : {
         "Type" : "Managed",
         "ServiceRole" : { "Fn::GetAtt": ["TpkBuilderBatchServiceRole",  "Arn" ] },
-        "ComputeEnvironmentName": "TpkBuilderComputeEnvironment",
         "ComputeResources" : {
           "SecurityGroupIds": [ { "Ref": "SecurityGroup" }],
           "Subnets": [ { "Ref": "Subnet" } ],
@@ -516,13 +507,11 @@
         } ],
         "State": "ENABLED",
         "Priority": 1,
-        "JobQueueName": "TpkBuilderJobQueue"
       }
     },
     "TpkBuilderJobDefinition": {
       "Type": "AWS::Batch::JobDefinition",
       "Properties": {
-        "JobDefinitionName": "TpkBuilderJobDefinition",
         "RetryStrategy": {
           "Attempts": 1
         },
@@ -583,7 +572,6 @@
     "TpkAdministratorsSNS": {
       "Type": "AWS::SNS::Topic",
       "Properties": {
-        "TopicName": "TpkAdministratorsSNS",
         "Subscription": [{
           "Endpoint": { "Ref": "AdministratorEmail" },
           "Protocol": "email"
@@ -594,7 +582,6 @@
       "Type": "AWS::Events::Rule",
       "Properties": {
         "Description": "Rule to invoke Lambda when Tpk Builder Job fails",
-        "Name": "TpkBuilderJobFailedEventRule",
         "EventPattern": {
           "detail-type": [
             "Batch Job State Change"
@@ -614,7 +601,6 @@
       "Properties": {
         "CodeUri": "s3://tpk-cloudformation/tpkfailedlambda.zip",
         "Description": "Send email to user when a tpk job fails in Batch",
-        "FunctionName": "TpkJobFailedLambda",
         "Policies": [
           {
             "Statement": [
