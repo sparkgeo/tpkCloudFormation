@@ -64,6 +64,7 @@ aws cloudformation deploy --template-file frontendTemplate.json /
 --parameter-overrides BackendStack=backendStack GitHubOAuthToken=token /
 MapboxToken=token GitHubOwner=sharkinsspatial GitHubRepo=tpkdashboard/
 GitHubBranch=master WebsiteAddress=domainName
+
 ```
 
 `BackendStack` is the name of the backend stack created by the deploy described
@@ -73,10 +74,10 @@ in the backend section.
 Instructions on how to generate a token can be found [here](https://help.github.com/articles/creating-a-personal-access-token-for-the-command-line/).
 The following scopes are required for CodePipeline `repo:status` and `admin:repo_hook`
 
-`MapboxToken` is a valid Mapbox [token](https://www.mapbox.com/help/how-access-tokens-work/). 
+`MapboxToken` is a valid Mapbox [token](https://www.mapbox.com/help/how-access-tokens-work/).
 
 `WebsiteAddress` is the web address to host the website at. Use the desired
-domain name for the application (e.g dgmapsapi.com for tpkrequest). 
+domain name for the application (e.g dgmapsapi.com for tpkrequest).
 An S3 bucket will be created with the same address. This bucket must not already exist
 globally anywhere in S3. (This is a requirement/limitation of s3-website.)
 Do not prefix with http e.g. dgmapsapi.com.
@@ -115,7 +116,7 @@ The user will receive an email with a link to the application's updateUser page
 where they can use their temporary password to update their account information.
 
 All users have access to the create tile pacakges using the tpkrequest
-application.  Users can use the tpkdashboard app to view the history of tpk jobs 
+application.  Users can use the tpkdashboard app to view the history of tpk jobs
 they have created.  By default, users may only view tpk jobs they have created
 themselves.
 
@@ -131,3 +132,14 @@ page containing the following buttons at the top.
 
 If you wish to add the user to an adminstrative group click the 'Add to group'
 button and choose the appropriate group from the dropdown menu.
+
+## Registration Email
+
+By default the notification the user receives when they are added redirects
+them to the production version of the `tpkrequest` application in order to
+update their password and user information.  Because the appropriate application
+url is not known until after the `tpkrequest` frontend stack is created the
+email message needs to be manually updated.  From the Cognito [console](https://console.aws.amazon.com/cognito/home?region=us-east-1)
+on the left hand menu click `General Settings` -> `Message Customizations`.  Now
+edit the address under `Do you want to customize your user invitation messages?`
+-> `Email Message`.
